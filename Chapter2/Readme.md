@@ -2,7 +2,7 @@
 
 ## 1. Keeping changes made to a container by committing to an image
 
-* First, we create a container, in which we run an apt-get update:
+* first, we create a container, in which we run an apt-get update:
 
 ```
    $ docker run -t -i ubuntu:14.04 /bin/bash
@@ -10,30 +10,30 @@
    # exit
 ```
 
-* Even if the container has exited, it's still available until we remove it (with docker rm). Before that,
+* even if the container has exited, it's still available until we remove it (with docker rm). Before that,
 let's create a new image called ubuntu:update:
 
    `docker commit CONTAINER_ID ubuntu:update`
 
-* We can now safely remove the container. The changes made inside the container can be inspected with the docker diff command:
+* we can now safely remove the container. The changes made inside the container can be inspected with the docker diff command:
 
    `docker diff CONTAINER_ID`
 
 ## 2. Saving images and containers as Tar files for sharing
 
-* Export a container in a tarball:
+* export a container in a tarball:
 
    `docker export CONTAINER_ID > update.tar`
 
-* Import a container from a tarball:
+* import a container from a tarball:
 
    `docker import - update < update.tar`
 
-* Save an image:
+* save an image:
 
    `docker save -o update1.tar update`
 
-* Load an image:
+* load an image:
 
    `docker load < update1.tar`
 
@@ -43,11 +43,11 @@ The 2 methods are similar except:
 
 ## 3. Writing your first Dockerfile
 
-* Files:
-** Dockerfile
-** Dockerfile2
+* files:
+    * Dockerfile
+    * Dockerfile2
 
-* Let's build an image from a dockerfile that will allow us to create a container that executes an echo command (see Dockerfile):
+* let's build an image from a dockerfile that will allow us to create a container that executes an echo command (see Dockerfile):
 
    ```
    docker build .
@@ -55,7 +55,7 @@ The 2 methods are similar except:
    docker run IMAGE_ID Hi Docker !
    ```
 
-* In the dockerfile, instead of ENTRYPOINT, we can use CMD that will force the container to use a predefinite command. The command
+* in the dockerfile, instead of ENTRYPOINT, we can use CMD that will force the container to use a predefinite command. The command
 passed in CMD can also be overwritten by a command passed in argument:
 
    ```
@@ -63,7 +63,7 @@ passed in CMD can also be overwritten by a command passed in argument:
    docker images
    docker run IMAGE_ID /bin/date
    ```
-* You can also set a tag for your images, instead of to have a randomly generated CONTAINER_ID:
+* you can also set a tag for your images, instead of to have a randomly generated CONTAINER_ID:
 
    ```
    docker build -t cookbook:kevin -f ./Dockerfile2
@@ -72,11 +72,11 @@ passed in CMD can also be overwritten by a command passed in argument:
    ```
 ## 4. Packaging a flask app inside a container
 
-* Files:
-** hello.py
-** Dockerfile3
+* files:
+    * hello.py
+    * Dockerfile3
 
-* Let's build the image from the Dockerfile:
+* let's build the image from the Dockerfile:
 
    ```
    docker build -t flask -f ./Dockerfile3 .
@@ -85,21 +85,21 @@ passed in CMD can also be overwritten by a command passed in argument:
    docker ps
    ```
 
-* Then run a curl to  http://192.168.33.10:PORT/hi and you will see that it returns "hello world".
+* then run a curl to  http://192.168.33.10:PORT/hi and you will see that it returns "hello world".
 
 ## 5. Optimizing your Dockerfile by following best practices
 
-* Files:
-** Dockerfile4
+* files:
+    * Dockerfile4
 
-* Here are the main ideas about Dockerfile best practices:
-** Run a single process per container.
-** Do not assume your container will live on. They are ephemeral and will be restarted.
-** Use a .dockerignore file to exclude file and directories from being copied during the build process.
-** Use official images from DockerHub.
-** Always minimize the number of layers of the images.
+* here are the main ideas about Dockerfile best practices:
+    * Run a single process per container.
+    * Do not assume your container will live on. They are ephemeral and will be restarted.
+    * Use a .dockerignore file to exclude file and directories from being copied during the build process.
+    * Use official images from DockerHub.
+    * Always minimize the number of layers of the images.
 
-* Let's build the image from the Dockerfile:
+* let's build the image from the Dockerfile:
 
    ```
    docker build -t flask -f ./Dockerfile4 .
@@ -107,11 +107,11 @@ passed in CMD can also be overwritten by a command passed in argument:
    docker run -d -P flask
    docker ps
    ```
-* Then run a curl to  http://192.168.33.10:PORT/hi and you will see that it returns "hello world".
+* then run a curl to  http://192.168.33.10:PORT/hi and you will see that it returns "hello world".
 
 ## 6. Versioning an image with Tags
 
-* Let's rename the classic ubuntu image to foobar:
+* let's rename the classic ubuntu image to foobar:
 
    ```
    docker images
@@ -122,7 +122,7 @@ passed in CMD can also be overwritten by a command passed in argument:
    ```
 ## 10. Using ONBUILD images
 
-* Files:
-** Dockerfile5
+* files:
+    * Dockerfile5
 
-* We can use the ONBUILD feature to use in a container the directives declared in a parent image.
+* we can use the ONBUILD feature to use in a container the directives declared in a parent image.
