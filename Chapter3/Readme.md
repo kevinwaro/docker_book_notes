@@ -139,14 +139,15 @@
 
   ```
   sudo systemctl stop docker.service
-  systemctl edit docker.service
+  sudo systemctl edit docker.service
   ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock --iptables=false --ip-forward=false
-  sudo iptables --delete-chain DOCKER
+  sudo iptables -F
   sudo iptables --delete-chain DOCKER-ISOLATION-STAGE-1
   sudo iptables --delete-chain DOCKER-ISOLATION-STAGE-2
-  sudo iptables -t nat -D POSTROUTING 1
+  sudo iptables --delete-chain DOCKER
+  sudo iptables --delete-chain DOCKER-USER
   echo 0 > /proc/sys/net/ipv4/ip_forward
-  systemctl restart docker.service
+  sudo systemctl restart docker.service
   ```
 
 * now let's run a container:
@@ -160,23 +161,24 @@
 
   ```
   echo 1 > /proc/sys/net/ipv4/ip_forward
+  docker run -it --rm ubuntu:14.04 bash
   sudo iptables -t nat -A POSTROUTING -s 172.17.0.0/16 -j MASQUERADE
   ```
 
-## 7. Using pipeworkd to understand container networking
+## 7. Using pipework to understand container networking
 
 * files:
     * pipework/Vagrantfile
 
 * we start a container without networking namespace:
   ```
-  docker run -it --rm --net=none ubuntu:14.04 bash
+  docker run -it --rm --net=none --name=cookbook ubuntu:14.04 bash
   ```
 
 * in another terminal, we use pipework to create a bridge and assign an IP address to the container:
   ```
   cd /vagrant
-  sudo ./pipewor br0 cookbook 192.168.1.10/24@192.168.1.254
+  sudo ./pipework br0 cookbook 192.168.1.10/24@192.168.1.254
   ```
 
 ## 8. Setting up a custome bridge for Docker
