@@ -224,13 +224,14 @@
 
    ```
    sudo ovs-vsctl add-br ovs-cookbook
+   sudo ip addr add 10.0.0.1/24 dev ovs-cookbook
    sudo ip link set ovs-cookbook up
    ```
 * start a container without networking stack, and in a different shell use pipework to create an interface:
 
   ```
   docker run -it --rm --net=none --name foobar ubuntu:14.04 bash
-  cd /vagrant/pipework && sudo su -
+  cd /vagrant/pipework && sudo su
   ./pipework ovs-cookbook foobar 10.0.0.10/24@10.0.0.1
   ovs-vsctl list-ports ovs-cookbook
   ifconfig
