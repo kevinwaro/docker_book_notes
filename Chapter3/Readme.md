@@ -181,7 +181,7 @@
   sudo ./pipework br0 cookbook 192.168.1.10/24@192.168.1.254
   ```
 
-## 8. Setting up a custome bridge for Docker
+## 8. Setting up a custom bridge for Docker
 
 * we turn off the Docker daemon, and delete the docker0 bridge created by default:
 
@@ -296,3 +296,53 @@
    ```
 
 * but also each container !! 
+
+## 11. Running Containers ona Weave Network
+
+* Files:
+    * weavenet/Vagrantfile
+
+* on the first vm, we launch a new weavenet:
+
+    ```
+    vagrant ssh weave01
+    weave launch
+    ```
+* on the second vm, we also launch the Weave Network and we pass the ip of the first VM to the command to peer with it:
+
+    ```
+    vagrant ssh weave02
+    weave launch 172.18.8.101
+    ```
+
+* now that the hosts are peered, we can start a few containers, to create a DNS-based load-balanced service:
+
+    ```
+    vagrant ssh weave01
+    eval $(weave env)
+    docker run -d -h lb.weave.local fintanr/myip-scratch
+    docker run -d -h lb.weave.local fintanr/myip-scratch
+    docker run -d -h hello.weave.local fintanr/weave-gs-simple-hw
+    exit
+
+    vagrant ssh weave02
+    eval $(weave env)
+    docker run -d -h lb.weave.local fintanr/myip-scratch
+    docker run -d -h hello-host2.weave.local fintanr/weave-gs-simple-hw
+    exit
+    ```
+
+* we can now make some requests:
+
+    ```
+    vagrant ssh weave01
+    eval $(weave env)
+    C=$(docker run -d -ti fintanr/weave-gs-ubuntu-curl)
+    docker attach $C
+    # curl lb
+    # curl lb/myip
+    # curl lb/myip
+    # curl lb/myip
+    # curl hello
+    # curl hellow-host2
+    ```
