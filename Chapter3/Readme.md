@@ -314,7 +314,6 @@
     vagrant ssh weave02
     weave launch 172.18.8.101
     ```
-
 * now that the hosts are peered, we can start a few containers, to create a DNS-based load-balanced service:
 
     ```
@@ -331,7 +330,6 @@
     docker run -d -h hello-host2.weave.local fintanr/weave-gs-simple-hw
     exit
     ```
-
 * we can now make some requests:
 
     ```
@@ -345,4 +343,119 @@
     # curl lb/myip
     # curl hello
     # curl hellow-host2
+    ```
+## 13. Deploying a flannel overlay network between Docker Hosts
+
+* Files:
+    * flannel/Vagrantfile
+    * flannel/bootstrap.sh
+
+* on the master vm, we start etcd in the backgrond, and we save in the network configuration in etcd:
+
+    ```
+    vagrant ssh master
+    cd /opt/coreos/etcd-v3.3.18-linux-amd64/
+    nohup ./etcd --listen-client-urls=http://0.0.0.0:2379 --advertise-client-urls=http://192.168.33.10:2379 &
+    ./etcdctl set /coreos.com/network/config '{"Network": "10.100.0.0/16"}'
+    ```
+
+* now we start the flannel daemon:
+
+    ```
+    cd ..
+    sudo ./flanneld --iface=192.168.33.10 --ip-masq &
+    ```
+
+* then we edit the docker service unit file to not let the docker daemon manage the networking:
+
+    ```
+    sudo systemctl edit docker.service
+    ExecStart=
+    ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock --iptables=false --bip=10.100.49.1/24 --ip-masq=false --mtu=1472
+    sudo iptables -F
+    sudo iptables --delete-chain DOCKER-ISOLATION-STAGE-1
+    sudo iptables --delete-chain DOCKER-ISOLATION-STAGE-2
+    sudo iptables --delete-chain DOCKER
+    sudo iptables --delete-chain DOCKER-USER
+    sudo systemctl daemon-reload
+    sudo systemctl restart docker.service
+    ```
+
+* on the worker vm, we do the same than for the master but this time we provide the address of the etcd service:
+
+    ```
+    vagrant ssh worker
+    cd /opt/coreos/    
+    sudo ./flanneld --etcd-endpoints=http://192.168.33.10:2379 --iface=192.168.33.11 --ip-masq &
+    sudo ./mk-docker-opts.sh -c -d /etc/default/docker
+    sudo systemctl edit docker.service
+    ExecStart=
+    ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock --iptables=false --bip=10.100.6.1/24 --ip-masq=false --mtu=1472
+    sudo iptables -F
+    sudo iptables --delete-chain DOCKER-ISOLATION-STAGE-1
+    sudo iptables --delete-chain DOCKER-ISOLATION-STAGE-2
+    sudo iptables --delete-chain DOCKER
+    sudo iptables --delete-chain DOCKER-USER
+    sudo systemctl restart docker.service
+    ```
+* Now we can check the connectivity between the 2 hosts and see if the containers can communicate with each others
+
+## 14. Networking Containers on Multiple Hosts with Docker Network
+
+* Files:
+    * overlay/Vagrantfile
+
+* we are going to setup an overlay network between 3 Docker hosts, allowing them to communicate together. First, we start the 3 vms:
+
+    ```
+    vagrant up master worker-1 worker-2
+    ```
+* then on the master we initialize a swarm, and we make the 2 other vms to join it:
+
+    ```
+    vagrant ssh master
+    docker swarm init --advertise-addr=192.168.33.10
+    vagrant ssh worker-1
+    docker swarm join --token <TOKEN> --advertise-addr 192.168.33.11 192.168.33.10:2377
+    vagrant ssh worker-2
+    docker swarm join --token <TOKEN> --advertise-addr 192.168.33.12 192.168.33.10:2377
+    ```
+
+* on the manager, we can now see all the nodes of the swarm:
+
+    ```
+    vagrant ssh manager
+    docker node ls
+    docker no ls --filter=manager
+    ```
+   
+* we are now going to create a new overlay network called nginxnet, and create a 5-replica Nginx service connected to it:
+
+    ```
+    vagrant ssh manager
+    docker network create -d overlay nginxnet
+    docker service create \
+        --name my-nginx \
+        --publish target=80,published=80 \
+        --replicas=5 \
+        --network nginxnet \
+        nginx
+    ```
+
+* what we can see is that 5 containers have been created along the 3 hosts, and all of them connected thanks to the overlay network.
+
+    ```
+    vagrant ssh manager
+    docker ps
+    vagrant ssh worker-1
+    docker ps
+    vagrnat ssh worker-2
+    docker ps
+    ```
+
+* with the docker inspect command, we can see what is the IP address allocated to each of the containers:
+
+    ```
+    docker ps
+    docker inspect --format='{{json .NetworkSettings.Networks.nginxnet.IPAddress}}' <CONTAINER_ID>
     ```

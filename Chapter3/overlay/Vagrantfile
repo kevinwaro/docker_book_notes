@@ -1,0 +1,46 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+$bootstrap=<<SCRIPT
+apt-get update
+apt-get -y install wget curl
+apt-get -y install bridge-utils
+curl -sSL https://get.docker.com | sh
+gpasswd -a vagrant docker
+SCRIPT
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  config.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
+  num_nodes = 2
+  base_ip = "192.168.33."
+  worker_ips = num_nodes.times.collect { |n| base_ip + "#{n+11}" }
+
+  config.vm.define "master" do |master|
+    master.vm.box = "debian/buster64"
+    master.vm.hostname = "master"
+    master.vm.network :private_network, ip: "192.168.33.10"
+    master.vm.provider "virtualbox" do |vb|
+     vb.customize ["modifyvm", :id, "--memory", "512"]
+    end
+    master.vm.provision :shell, inline: $bootstrap
+  end
+
+  num_nodes.times do |n|
+    config.vm.define "worker-#{n+1}" do |worker|
+      worker.vm.box = "debian/buster64"
+      worker_ip = worker_ips[n]
+      worker_index = n+1
+      worker.vm.hostname = "worker-#{worker_index}"
+      worker.vm.provider "virtualbox" do |vb|
+        vb.customize ["modifyvm", :id, "--memory", "1024"]
+      end
+      worker.vm.network :private_network, ip: "#{worker_ip}"
+      worker.vm.provision :shell, inline: $bootstrap
+    end
+  end
+
+end
