@@ -1,34 +1,42 @@
 # -*- mode: ruby -*-
-$bootstrap_docker=<<-SCRIPT
-apt-get update
-apt-get install -y wget
-wget -qO- https://get.docker.com | sh
-usermod -aG docker vagrant
-service docker restart
-SCRIPT
+# vi: set ft=ruby :
+Vagrant.configure("2") do |config|
 
-Vagrant.configure(2) do |config|
+  config.vm.define "master" do |master|
+    master.vm.box = "debian/stretch64"
+    master.vm.hostname = "master"
+    master.vm.network "private_network", ip: "172.16.1.11"
+    master.vm.provider "virtualbox" do |vb|
+        vb.memory = "2048"
+    end
+    master.vm.provision "ansible/master", type: "ansible" do |ansible|
+        ansible.playbook = "ansible/provision-master.yml"
+        ansible.verbose = "v"
+        ansible.extra_vars = {
+            "target" => "master",
+            "master_ip" => "172.16.1.11",
+            "master_ip_subnet" => "172.16.1.0/24",
+            "join_file" => "join.txt"
+        }
+    end
+  end
 
- config.vm.define "master" do |master|
-   master.vm.box ="debian/stretch64"
-   master.vm.network "private_network", ip: "192.168.200.10"
-   master.vm.hostname = "master"
-   master.vm.provider "virtualbox" do |vb|
-     vb.memory = "1024"
-     vb.cpus = 2
-   end
-   master.vm.provision "shell", inline: $bootstrap_docker
- end
-
- config.vm.define "node" do |node|
-   node.vm.box ="debian/stretch64"
-   node.vm.network "private_network", ip: "192.168.200.11"
-   node.vm.hostname = "node"
-   node.vm.provider "virtualbox" do |vb|
-     vb.memory = "1024"
-     vb.cpus = 2
-   end
-   node.vm.provision "shell", inline: $bootstrap_docker
- end
+  config.vm.define "node1" do |node1|
+    node1.vm.box = "debian/stretch64"
+    node1.vm.hostname = "node1"
+    node1.vm.network "private_network", ip: "172.16.1.12"
+    node1.vm.provider "virtualbox" do |vb|
+        vb.memory = "2048"
+    end
+    node1.vm.provision "ansible/node1", type: "ansible" do |ansible|
+        ansible.playbook = "ansible/provision-node.yml"
+        ansible.verbose = "v"
+        ansible.extra_vars = {
+            "target" => "node1",
+            "node_ip" => "172.16.1.12",
+            "join_file" => "join.txt"
+        }
+    end
+  end
 
 end

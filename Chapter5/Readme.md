@@ -12,6 +12,8 @@
 
 ## 3. Creating a multinode cluster with vagrant
 
+### 1. Minikube
+
 * Files:
    * minikube/Vagrantfile
 
@@ -23,7 +25,25 @@
    vagrant ssh
    ```
 
-We now have a kubernete node fully up and running:
+We now have a kubernetes node fully up and running:
+
+   ```
+   kubectl get nodes
+   ```
+
+### 2. Custom solution
+
+* Files:
+   * Vagrantfile
+   * ansible/
+
+* As the vagrant provider is not avaiable, I have writted an ansible playbook to deploy a multinode cluster. The cluster is composed of a master and a node. The cluster networking is based on weave. You can start it by running the following commands:
+
+   ```
+   vagrant up master node1
+   vagrant ssh master
+   ```
+We now have a multinode kubernetes cluster up and running:
 
    ```
    kubectl get nodes

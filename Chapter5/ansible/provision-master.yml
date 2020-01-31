@@ -1,0 +1,117 @@
+---
+- name: Provision a kubernetes master node
+  hosts: "{{ target }}"
+  become: yes
+  tasks:
+      - name: Update apt repository cache
+        apt:
+            update_cache: yes
+
+      - name: Install dependencies packages
+        apt:
+            name: "{{ item }}"
+            state: present
+        with_items:
+            - wget
+            - curl
+            - apt-transport-https
+            - gnupg2
+            - software-properties-common
+
+      - name: Add docker apt repository key
+        apt_key:
+            url: https://download.docker.com/linux/debian/gpg
+            state: present
+
+      - name: Add docker apt repository
+        apt_repository:
+            repo: deb https://download.docker.com/linux/debian buster stable
+            state: present
+
+      - name: Install docker packages
+        apt:
+            name: "{{ item }}"
+            state: present
+        with_items:
+            - docker-ce
+            - docker-ce-cli
+            - containerd.io
+
+      - name: Add vagrant user to docker group
+        user:
+            name: vagrant
+            group: docker
+
+      - name: Disable swapp
+        command: sed -i '/swap/d' /etc/fstab
+
+      - name: Disable swap
+        command: swapoff -a
+
+      - name: Add k8s apt repository key
+        apt_key:
+            url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+            state: present
+
+      - name: Add k8s apt repository
+        apt_repository:
+            repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+            state: present
+
+      - name: Update apt repository cache
+        apt:
+            update_cache: yes
+
+      - name: Install dependencies packages
+        apt:
+            name: "{{ item }}"
+            state: present
+        with_items:
+            - kubelet
+            - kubeadm
+            - kubectl
+
+      - name: Update k8s configuration
+        lineinfile:
+            name: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+            insertafter: EOF
+            line: "Environment=\"KUBELET_EXTRA_ARGS=--node-ip={{ master_ip }}\""
+
+      - name: Restart kubelet service
+        service:
+            name: kubelet
+            daemon_reload: yes
+            state: restarted
+  
+      - name: Start cluster
+        command:
+            cmd: "kubeadm init --apiserver-advertise-address={{ master_ip }} --pod-network-cidr={{ master_ip_subnet }}"
+
+      - name: Create kube folder in user directory
+        file:
+            path: /home/vagrant/.kube
+            owner: vagrant
+            group: vagrant
+            state: directory
+
+      - name: Copy admin.conf file
+        copy:
+            src: /etc/kubernetes/admin.conf
+            dest: /home/vagrant/.kube/config
+            remote_src: yes
+            owner: vagrant
+            group: vagrant
+
+      - name: Install weave pod networking
+        become: no
+        shell:
+            cmd: kubectl apply \-f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+
+      - name: Generate join command
+        command: kubeadm token create --print-join-command
+        become: no
+        register: join
+
+      - name: Copy join command to local file
+        become: no
+        local_action: copy content={{ join.stdout }} dest={{ join_file }}

@@ -1,0 +1,96 @@
+---
+- name: Provision a kubernetes master node
+  hosts: "{{ target }}"
+  become: yes
+  tasks:
+      - name: Update apt repository cache
+        apt:
+            update_cache: yes
+
+      - name: Install dependencies packages
+        apt:
+            name: "{{ item }}"
+            state: present
+        with_items:
+            - wget
+            - curl
+            - apt-transport-https
+
+      - name: Add docker apt repository key
+        apt_key:
+            url: https://download.docker.com/linux/debian/gpg   
+            state: present
+
+      - name: Add docker apt repository
+        apt_repository:
+            repo: deb https://download.docker.com/linux/debian buster stable
+            state: present
+
+      - name: Install docker packages
+        apt:
+            name: "{{ item }}"
+            state: present
+        with_items:
+            - docker-ce
+            - docker-ce-cli
+            - containerd.io
+
+      - name: Add vagrant user to docker group
+        user:
+            name: vagrant
+            group: docker
+
+      - name: Disable swapp
+        command: sed -i '/swap/d' /etc/fstab
+
+      - name: Disable swap
+        command: swapoff -a
+
+      - name: Add k8s apt repository key
+        apt_key:
+            url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+            state: present
+
+      - name: Add k8s apt repository key
+        apt_repository:
+            repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+            state: present
+
+      - name: Update apt repository cache
+        apt:
+            update_cache: yes
+
+      - name: Install dependencies packages
+        apt:
+            name: "{{ item }}"
+            state: present
+        with_items:
+            - kubelet
+            - kubeadm
+            - kubectl
+
+      - name: Copy join command
+        copy:
+            src: "{{ join_file }}"
+            dest: "/tmp/{{ join_file }}"
+            mode: 0777
+
+      - name: Join k8s cluster
+        command: sh "{{ join_file }}"
+        args:
+            chdir: /tmp
+
+      - name: Update kubeadm.conf file
+        lineinfile:
+            path: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+            regexp: 'Environment="KUBELET_EXTRA_ARGS="'
+            line: "Environment=\"KUBELET_EXTRA_ARGS=--node-ip={{ node_ip }}\""
+
+      - name: Reload systemd daemon
+        systemd:
+            daemon_reload: yes
+
+      - name: Restart kubelet service
+        service:
+            name: kubelet
+            state: restarted
