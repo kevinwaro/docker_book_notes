@@ -65,3 +65,85 @@ Once the image downloaded the container will start running, and you can open you
 After having finished to play, you can easily delete the pod:
 
    `sudo kubectl delete 2048`
+
+##  5. Taking advange of labels for querying kubernetes objects
+
+* Files:
+   * 2048.yml
+
+* In large k8s cluster, we need a way to easily query and manipulate sets of objects. This is possible by using labels. They are
+key/value pairs declared in the metadata section of an object definition.
+
+* In our case, with the 2048.yml file, we can list pods that have a specific label:
+
+   ```
+   kubectl get pods --selector="foo=bar"
+   ```
+
+* We also can add labels at runtime using the kubectl label command:
+
+   ```
+   kubectl label pods 2048 env=production
+   ```
+
+## 6. Using a Replication Controller to manage the number of replicas of a pod
+
+* Files:
+   * rs2048.yml
+
+* ReplicaSets (who have replaced the Replication Controller) insure to maintain a stable set of replica pods running at any given
+time, to guarantee the availibility of pods.
+
+* We can start our ReplicaSet with the following command:
+
+   ```
+   kubectl apply -f /vagrant/rs2048.yml
+   ```
+
+* We can also list the available Replica Sets:
+
+   ```
+   kubectl get rs
+   ```
+
+* Now let's describe our rcgame Replica Set:
+
+   ```
+   kubectl describe rs/rcgame
+   ```
+
+* We also can resize the Replica Set at runtime. Per example, let's increase it to 5 replicas:
+
+   ```
+   kubectl scale --replica=5 rs rcgame
+   kubectl get all
+   ```
+
+## 7. Running multiple containers in a Pod
+
+* Files:
+   * wordpress.yml
+   * rswordpress.yml
+
+* It's possible to run more than one container in a pod. In our example we are going to run a mysql with a wordpress container, using the Docker linking
+mechanism to allow them to communicate.
+
+   ```
+   kubectl apply -f /vagrant/wordpress.yml
+   kubectl get all
+   ```
+
+* Now we can display the logs of the container in our pod:
+
+   ```
+   kubectl logs pod/wp wordpress
+   kubectl logs pod/wp mysql
+   ```
+
+* As we did for the 2048 game, we can also use a ReplicaSet to have a replica pods to ensure the availability of our wordpress app:
+
+   ```
+   kubectl delete pod/wp
+   kubectl apply -f /vagrant/wordpress.yml
+   kubectl get all
+   ```
