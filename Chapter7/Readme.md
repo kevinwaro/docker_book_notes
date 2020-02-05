@@ -18,6 +18,12 @@
    docker-compose ps
    docker-compose stop wordpress
    ```
+* Finally, we can get rid of them with the following command:
+
+  ```
+  docker-compose -f /vagrant/docker-compose.yml rm
+  ```
+
 ## Chapter2: Using Docker to test Apache Mesos and Marathon on Docker
 
 * Files:
@@ -26,5 +32,7 @@
 * Let's build mesos DC made of 4 containers:
  
   ```
-  docker-compose -f /vagrant/compose-mesos.yml
+  docker-compose -f /vagrant/compose-mesos.yml up -d
   ```
+
+* Then open your browser at http://192.168.33.10:5050 and you will have access to the Mesos UI.

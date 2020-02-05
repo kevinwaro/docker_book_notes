@@ -1,19 +1,26 @@
-wordpress:
-    image: wordpress
-    links:
-        - mysql
-    ports:
-        - "80:80"
-    environment:
-        - WORDPRESS_DB_NAME=wordpress
-        - WORDPRESS_DB_USER=wordpress
-        - WORDPRESS_DB_PASSWORD=wordpress
-mysql:
-    image: mysql
-    volumes:
-        - /home/docker/mysql:/var/lib/mysql
-    environment:
-        - MYSQLROOT_ROOT_PASSWORD=wordpressdocker
-        - MYSQL_DATABASE=wordpress
-        - MYSQL_USER=wordpress
-        - MYSQL_PASSWORD=wordpresspwd
+version: '3'
+services:
+    wordpress:
+        image: wordpress
+        depends_on:
+            - mysql
+        restart: always
+        links:
+            - mysql
+        ports:
+            - "8000:80"
+        environment:
+            - WORDPRESS_DB_HOST=mysql:3306
+            - WORDPRESS_DB_NAME=wordpress
+            - WORDPRESS_DB_USER=wordpress
+            - WORDPRESS_DB_PASSWORD=wordpresspwd
+    mysql:
+        image: mysql:5.7
+        restart: always
+        volumes:
+            - /home/docker/mysql:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD=wordpressdocker
+            - MYSQL_DATABASE=wordpress
+            - MYSQL_USER=wordpress
+            - MYSQL_PASSWORD=wordpresspwd

@@ -6,7 +6,8 @@ apt-get install -y wget
 wget -qO- https://get.docker.com | sh
 usermod -aG docker vagrant
 service docker restart
-apt-get install -y python-pip
+apt install -y python-pip
+pip install -U pip
 pip install -U docker-compose
 SCRIPT
 
