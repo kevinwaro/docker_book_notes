@@ -1,0 +1,48 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+$bootstrap=<<-SCRIPT
+apt-get update
+apt-get install -y wget
+wget -qO- https://get.docker.com | sh
+usermod -aG docker vagrant
+service docker restart
+SCRIPT
+
+$bootstrap_head=<<-SCRIPT
+docker swarm init --advertise-addr 172.16.1.11
+SCRIPT
+
+Vagrant.configure("2") do |config|
+
+  config.vm.define "swarmhead" do |swarmhead|
+    swarmhead.vm.box = "debian/stretch64"
+    swarmhead.vm.hostname = "swarm-head"
+    swarmhead.vm.network "private_network", ip: "172.16.1.11"
+    swarmhead.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+    end
+    swarmhead.vm.provision "shell", inline: $bootstrap
+    swarmhead.vm.provision "shell", inline: $bootstrap_head
+  end
+
+  config.vm.define "swarm1" do |swarm1|
+    swarm1.vm.box = "debian/stretch64"
+    swarm1.vm.hostname = "swarm-1"
+    swarm1.vm.network "private_network", ip: "172.16.1.12"
+    swarm1.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+    end
+    swarm1.vm.provision "shell", inline: $bootstrap
+  end
+
+  config.vm.define "swarm2" do |swarm2|
+    swarm2.vm.box = "debian/stretch64"
+    swarm2.vm.hostname = "swarm-2"
+    swarm2.vm.network "private_network", ip: "172.16.1.13"
+    swarm2.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+    end
+    swarm2.vm.provision "shell", inline: $bootstrap
+  end
+
+end
