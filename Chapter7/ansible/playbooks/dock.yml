@@ -1,0 +1,9 @@
+- hosts: nginx
+  tasks:
+  - name: Run nginx container
+    docker_container:
+        name: nginx
+        image: nginx:latest
+        detach: yes
+        ports:
+            - "80:80"

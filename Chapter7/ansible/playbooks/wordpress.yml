@@ -1,0 +1,30 @@
+- hosts: all
+  tasks:
+
+  - name: Docker pull mysql
+    docker_image:
+        name: mysql:5.7
+        pull: yes
+
+  - name: Docker pull wordpress
+    docker_image:
+        name: wordpress:latest
+        pull: yes
+
+  - name: Run mysql container
+    docker_container:
+        name: mysql
+        image: mysql:5.7
+        detach: yes
+        env: "MYSQL_ROOT_PASSWORD=wordpressdocker,MYSQL_DATABASE=wordpress,MYSQL_USER=wordpress,MYSQL_PASSWORD=wordpresspwd"
+
+  - name: Run wordpress container
+    docker_container:
+        name: wordpress
+        image: wordpress
+        detach: yes
+        env: "WORDPRESS_DB_NAME=wordpress,WORDPRESS_DB_USER=wordpress,WORDPRESS_DB_PASSWORD=wordpresspwd"
+        ports:
+            - "80:80"
+        links:
+            - "mysql:mysql"

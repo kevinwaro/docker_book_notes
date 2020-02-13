@@ -1,0 +1,22 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+$bootstrap=<<-SCRIPT
+apt-get update
+apt-get install -y wget
+wget -qO- https://get.docker.com | sh
+usermod -aG docker vagrant
+systemctl restart docker.service
+SCRIPT
+
+Vagrant.configure("2") do |config|
+
+  config.vm.define "docker" do |docker|
+    docker.vm.box = "debian/buster64"
+    docker.vm.hostname = "docker"
+    docker.vm.network "private_network", ip: "172.16.1.11"
+    docker.vm.provider "virtualbox" do |vb|
+        vb.memory = "2048"
+    end
+    docker.vm.provision "shell", inline: $bootstrap
+  end
+end

@@ -74,3 +74,18 @@ swarm:
   vagrant ssh swarmhead
   docker node ls
   ```
+
+## Chapter8: Orchestrating Containers with Ansible Docker module
+
+* Files:
+  * ansible/Vagrantfile
+  * ansible/ansible.cfg
+  * ansible/inventory
+  * ansible/playbooks
+
+* We can use Ansible to manage and orchestrate Docker:
+
+  ```
+  ansible-playbook -i inventory playbooks/wordpress.yml -u vagrant
+  ansible-playbook -i inventory playbooks/dock.yml -u vagrant
+  ```
