@@ -65,7 +65,7 @@ swarm:
   vagrant ssh swarm1
   docker swarm join --token <TOKEN> 172.16.1.11:2377
   vagrant ssh swarm2
-  docker swarm join --token <TOKEN> 172.16.1.11:2377<Paste>
+  docker swarm join --token <TOKEN> 172.16.1.11:2377
   ```
 
 * We can now check of what is made of the swarm cluster:
@@ -89,3 +89,30 @@ swarm:
   ansible-playbook -i inventory playbooks/wordpress.yml -u vagrant
   ansible-playbook -i inventory playbooks/dock.yml -u vagrant
   ```
+
+## Chapter9: Using Rancher to manage Containers on a Cluster of Docker Hosts
+
+* Files:
+  * rancher/Vagrantfile
+
+* Rancher is a solution who allows you to manage and orchestrate your Kubernetes Cluster without to have to deal with complex
+YAML files. Everything is done through an UI.
+
+* To start playing with it, let's bring up our vms:
+
+  ```
+  vagrant up master node1 node2
+  ```
+* Then, open your browser and go at the address: https://172.16.1.11. It will ask you to create a password, and another few questions.
+
+* After that, you will have access to the Rancher Dashboard. Start playing with it and create a new cluster. A command will be given to you to add the 2 other nodes to the cluster. Paste the command and run them on each of the nodes
+
+   ```
+   vagrant ssh node1
+   sudo docker run -d --privileged --restart=unless-stopped --net=host -v /etc/kubernetes:/etc/kubernetes -v /var/run:/var/run rancher/rancher-agent:v2.3.5 --server https://172.16.1.11 --token <TOKEN> --ca-checksum <CHECKSUM> --worker
+   vagrant ssh node2
+   sudo docker run -d --privileged --restart=unless-stopped --net=host -v /etc/kubernetes:/etc/kubernetes -v /var/run:/var/run rancher/rancher-agent:v2.3.5 --server https://172.16.1.11 --token <TOKEN> --ca-checksum <CHECKSUM> --worker
+   ```
+
+* You now have a fully configured Kubernetes cluster.
+   

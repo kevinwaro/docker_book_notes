@@ -1,0 +1,52 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+$bootstrap_master=<<-SCRIPT
+apt-get update
+apt-get install -y wget
+wget -qO- https://get.docker.com | sh
+usermod -aG docker vagrant
+systemctl restart docker.service
+docker run -d --restart=unless-stopped -p 80:80 -p 443:443 rancher/rancher:latest
+SCRIPT
+
+$bootstrap_node=<<-SCRIPT
+apt-get update
+apt-get install -y wget
+wget -qO- https://get.docker.com | sh
+usermod -aG docker vagrant
+systemctl restart docker.service
+SCRIPT
+
+Vagrant.configure("2") do |config|
+
+  config.vm.define "master" do |master|
+    master.vm.box = "debian/buster64"
+    master.vm.hostname = "master"
+    master.vm.network "private_network", ip: "172.16.1.11"
+    master.vm.provider "virtualbox" do |vb|
+        vb.memory = "2048"
+    end
+    master.vm.provision "shell", inline: $bootstrap_master
+  end
+
+  config.vm.define "node1" do |node1|
+    node1.vm.box = "debian/buster64"
+    node1.vm.hostname = "node1"
+    node1.vm.network "private_network", ip: "172.16.1.12"
+    node1.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+    end
+    node1.vm.provision "shell", inline: $bootstrap_node
+  end
+
+  config.vm.define "node2" do |node2|
+    node2.vm.box = "debian/buster64"
+    node2.vm.hostname = "node2"
+    node2.vm.network "private_network", ip: "172.16.1.13"
+    node2.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+    end
+    node2.vm.provision "shell", inline: $bootstrap_node
+  end
+
+end
