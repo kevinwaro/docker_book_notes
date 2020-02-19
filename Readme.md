@@ -18,6 +18,6 @@ Some notes taken when reading the book "Docker Cookbook: Solutions and Examples 
 
 ### Chapter5: Kubernetes
 
-### Chapter6: Optimized Operating System Dsitribution for Docker
+### Chapter6: Optimized Operating System Distribution for Docker
 
 ### Chapter7: The docker ecosystem: Tools
